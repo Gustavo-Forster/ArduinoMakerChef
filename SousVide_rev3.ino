@@ -185,6 +185,7 @@ int warningsBeforeCounterFall;
 
 // VARIAVEIS DO TIMER
 unsigned int targetTime = 40;
+int tempoMinutos;
 
 // =====================================
 unsigned long tcurrent = 0;
@@ -289,6 +290,17 @@ void loop() {
   timer();
   
   tcurrent = millis();
+
+  tempoMinutos = targetTime*60;
+  //Checa se o tempo atingiu o limite estipulado pelo usuário
+  if (TimeCheck(0,0,0))
+  {
+    soundAlarm();
+    StopTimer();
+    Clock = tempoMinutos;
+  }
+  // verifica se o usuário apertou o botão para parar/resetar o timer
+  apertouReset();
      
   // lê a temperatura cada poucos segundos e envia para saída serial se necessário. Alerta quando está dentro da faixa
   GetTemperatureAndEnforceSecurity();
@@ -490,12 +502,11 @@ void loop() {
 void timer()
 
 {
-  //SetTimer (targetTime*60);
-  if (sw_timer == HIGH)
+   if (sw_timer == HIGH)
   {
     apertouBotao = true;
     StartTimer();
-    SetTimer (targetTime*60); // Define o tempo do timer
+    SetTimer (tempoMinutos); // Define o tempo do timer
   }
   if (apertouBotao)
   {
@@ -511,8 +522,29 @@ void timer()
       lcd.print(":");
       (ShowSeconds() < 10) ? lcd.print("0") : NULL;
       lcd.print(ShowSeconds());
+
+      apertouReset();
   }
 }
+
+void apertouReset()
+{
+  if (digitalRead(BT_TIMER_PIN)==HIGH)
+  {
+    delay(200);
+    StopTimer();
+    Clock=tempoMinutos;
+  }
+}
+
+boolean TimeCheck(unsigned int hours, unsigned int minutes, unsigned int seconds) // output true if timer equals requested time or has passed it.
+ {
+    /*if(_type)
+      return ((hours <= ShowHours()) && (minutes <= ShowMinutes()) && (seconds <= ShowSeconds()));
+    else 
+      return ((hours >= ShowHours()) && (minutes >= ShowMinutes()) && (seconds >= ShowSeconds()));*/
+      return (hours == ShowHours() && minutes == ShowMinutes() && seconds == ShowSeconds());
+  }
 
 boolean CountUpDownTimer(boolean Type)
 {
@@ -573,6 +605,13 @@ void StopTimer()
   Stop = true;
 }
 
+void StopTimerAt(unsigned int hours, unsigned int minutes, unsigned int seconds)
+{
+  if (TimeCheck(hours, minutes, seconds) )
+    Stop = true;
+}
+
+
 void SetTimer(unsigned int seconds)
 {
  // StartTimer(seconds / 3600, (seconds / 3600) / 60, seconds % 60);
@@ -603,11 +642,10 @@ boolean TimeHasChanged()
 }
 
 // output true if timer equals requested time
-boolean TimeCheck(unsigned int hours, unsigned int minutes, unsigned int seconds) 
+/*boolean TimeCheck(unsigned int hours, unsigned int minutes, unsigned int seconds)
 {
   return (hours == ShowHours() && minutes == ShowMinutes() && seconds == ShowSeconds());
-  
-}
+}*/
 
 void ResetVariablesForRegulationCalculation()
 {
